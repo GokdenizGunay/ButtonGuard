@@ -1,0 +1,40 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Gökdeniz G.
+# ButtonGuard kaldırıldıktan sonra: masaüstü kısayollarını (kullanıcının kendi yetkisiyle)
+# sil, simge/menü önbelleklerini yenile.
+set -e
+
+APP=io.github.buttonguard
+
+USER_SCRIPT='
+desk=$(xdg-user-dir DESKTOP 2>/dev/null) || exit 0
+[ -n "$desk" ] && [ "$desk" != "$HOME" ] && [ -d "$desk" ] || exit 0
+rm -f "$desk/'$APP'.desktop"
+'
+
+if [ "$1" = "remove" ]; then
+    getent passwd | while IFS=: read -r user _ uid _ _ home _; do
+        [ "$uid" -ge 1000 ] 2>/dev/null && [ "$uid" -lt 60000 ] || continue
+        [ -d "$home" ] || continue
+        runuser -u "$user" -- env HOME="$home" sh -c "$USER_SCRIPT" || true
+    done
+    # Yeniden kurulumda postinst kısayolları tekrar eklesin.
+    mkdir -p /var/lib/buttonguard
+    touch /var/lib/buttonguard/removed
+fi
+
+if [ "$1" = "purge" ]; then
+    rm -rf /var/lib/buttonguard
+fi
+
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+    fi
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database -q /usr/share/applications || true
+    fi
+fi
+
+exit 0

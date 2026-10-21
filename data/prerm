@@ -1,0 +1,12 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Gökdeniz G.
+# ButtonGuard kaldırılmadan önce: çalışan kopyaları kapat. Uygulama çıkarken
+# logind kilidini bırakır ve masaüstü güç düğmesi ayarını eski haline getirir.
+set -e
+
+if [ "$1" = "remove" ]; then
+    pkill -TERM -f '^/usr/bin/python3 /usr/share/buttonguard/buttonguard.py' || true
+fi
+
+exit 0

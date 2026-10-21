@@ -1,0 +1,47 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Gökdeniz G.
+# ButtonGuard kurulum sonrası: simge/menü önbelleklerini yenile, masaüstü kısayolu ekle.
+# Kullanıcı klasörlerine root olarak yazılmaz: kısayol her kullanıcının kendi yetkisiyle
+# (runuser) kopyalanır, böylece bağlantı (symlink) hileleriyle sistem dosyası ezilemez.
+# Sonradan açılan hesaplarda kısayolu uygulama ilk açılışında kendisi ekler.
+set -e
+
+APP=io.github.buttonguard
+
+# Kullanıcı olarak çalışır: $1 kaynak .desktop, $2 kullanıcı kimliği (uid)
+USER_SCRIPT='
+desk=$(xdg-user-dir DESKTOP 2>/dev/null) || exit 0
+[ -n "$desk" ] && [ "$desk" != "$HOME" ] && [ -d "$desk" ] || exit 0
+dst="$desk/'$APP'.desktop"
+[ -e "$dst" ] || cp "$1" "$dst" || exit 0
+chmod 755 "$dst"
+bus="/run/user/$2/bus"
+if [ -S "$bus" ]; then
+    XDG_RUNTIME_DIR="/run/user/$2" DBUS_SESSION_BUS_ADDRESS="unix:path=$bus" \
+        gio set "$dst" metadata::trusted true >/dev/null 2>&1 || true
+fi
+'
+
+if [ "$1" = "configure" ]; then
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+    fi
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database -q /usr/share/applications || true
+    fi
+
+    # Yalnızca ilk kurulumda ya da kaldırıldıktan sonra yeniden kurulumda (postrm işareti);
+    # güncellemede kullanıcının sildiği kısayol geri gelmez.
+    if [ -z "$2" ] || [ -e /var/lib/buttonguard/removed ]; then
+        rm -f /var/lib/buttonguard/removed
+        getent passwd | while IFS=: read -r user _ uid _ _ home _; do
+            [ "$uid" -ge 1000 ] 2>/dev/null && [ "$uid" -lt 60000 ] || continue
+            [ -d "$home" ] || continue
+            runuser -u "$user" -- env HOME="$home" sh -c "$USER_SCRIPT" sh \
+                "/usr/share/applications/$APP.desktop" "$uid" || true
+        done
+    fi
+fi
+
+exit 0

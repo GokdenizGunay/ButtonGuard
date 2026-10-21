@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=ButtonGuard
+GenericName=Power Button Guard
+GenericName[tr]=Güç Düğmesi Koruması
+Comment=Prevent the power button from shutting down the system
+Comment[tr]=Güç düğmesinin sistemi kapatmasını engeller
+Exec=buttonguard
+Icon=io.github.buttonguard
+Terminal=false
+Categories=Utility;System;
+Keywords=power;button;shutdown;güç;düğme;kapatma;
+StartupNotify=true
+StartupWMClass=buttonguard

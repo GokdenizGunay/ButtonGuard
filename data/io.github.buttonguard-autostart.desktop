@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=ButtonGuard
+Comment[tr]=Güç düğmesi korumasını oturum açılışında başlatır
+Comment=Starts power button guard at login
+Exec=buttonguard --hidden
+Icon=io.github.buttonguard
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=3
